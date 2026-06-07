@@ -1,112 +1,119 @@
-import {useEffect,useState} from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import Card from "./components/Card";
 
-function App(){
+function App() {
+  const [task, setTask] = useState("");
+  const [tasks, setTasks] = useState([]);
 
-const [products,setProducts]= useState([]);
-const[editId,setEditId]= useState(null);
-const[name,setName]= useState("");
-const[price,setPrice]= useState("");
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/tasks");
+      setTasks(res.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
- useEffect(()=>{
-  axios.get("http://localhost:5000/products")
-  .then((res)=>{
-    setProducts(res.data);
-  }).catch((err)=>{
-    console.log(err);
-  })
- },[]);
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
-const handleDelete= async(id)=>{
-  try{
-     await axios.delete(
-       `http://localhost:5000/products/${id}`
-     )
+  const handleAdd = async () => {
+    if (!task.trim()) return;
 
-     setProducts(
-      products.filter((item)=>{
-        return  item._id !== id;
-      })
-     );
-  }catch(err){
-    console.log(err);
-  }
-}
+    try {
+      await axios.post("http://localhost:5000/add", {
+        task,
+      });
 
-const handleUpdate= async()=>{
-     try{
-        await axios.put(
-          `http://localhost:5000/products/${editId}`,
-          {
-            name,
-            price,
-          }
-        );
+      setTask("");
+      fetchTasks();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
-        window.location.reload();
-     }catch(err){
-      console.log(err);
-     }
-}
-
-
+  const handleDelete = async (id) => {
+    try {
+      await axios.delete(`http://localhost:5000/delete/${id}`);
+      fetchTasks();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   return (
+    <div
+      style={{
+        width: "600px",
+        margin: "40px auto",
+      }}
+    >
+      <h1 style={{ textAlign: "center" }}>Todo App</h1>
 
-    <div>
-       <h1>Products</h1>
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          marginBottom: "25px",
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Enter Task"
+          value={task}
+          onChange={(e) => setTask(e.target.value)}
+          style={{
+            flex: 1,
+            padding: "12px",
+            fontSize: "16px",
+          }}
+        />
 
-        {products.map((item)=>{
-          return(
-             <div key={item._id}>
-          <Card
-           name= {item.name}
-           price= {item.price}
-          />
+        <button
+          onClick={handleAdd}
+          style={{
+            padding: "12px 20px",
+            fontSize: "16px",
+            cursor: "pointer",
+          }}
+        >
+          Add Task
+        </button>
+      </div>
 
-       <button onClick={
-        ()=>{
-          setEditId(item._id);
-          setName(item.name);
-          setPrice(item.price);
-        }
-       }>  
-        Edit
-        </button> 
+      {tasks.map((item) => (
+        <div
+          key={item._id}
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            border: "1px solid #ddd",
+            borderRadius: "8px",
+            padding: "15px",
+            marginBottom: "12px",
+            fontSize: "18px",
+          }}
+        >
+          <span>{item.task}</span>
 
-        <button onClick={()=>handleDelete(item._id)}>Delete</button>
-
-</div>
-        );
-        })}
-
-        {editId && (
-          <div>
-            <h1>Update form</h1>
-            <input
-            type="text"
-            value={name}
-            placeholder="Enter the name"
-            onChange={(e)=>{
-               setName(e.target.value);
+          <button
+            onClick={() => handleDelete(item._id)}
+            style={{
+              backgroundColor: "red",
+              color: "white",
+              border: "none",
+              padding: "10px 18px",
+              borderRadius: "5px",
+              cursor: "pointer",
             }}
-            />
-            <input
-            type="Number"
-            value={price}
-            placeholder="Enter the price"
-            onChange= {()=>{
-              setPrice(e.target.value);
-            }}
-            />
-            <button onClick={handleUpdate}>
-              Save
-            </button>
-          </div>
-        )}
+          >
+            Delete
+          </button>
+        </div>
+      ))}
     </div>
-
   );
 }
 

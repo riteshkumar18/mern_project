@@ -1,68 +1,60 @@
-const express= require ("express");
+const express = require("express");
 const mongoose = require("mongoose");
-const cors= require("cors");
+const cors = require("cors");
 
-const app= express();
-app.use(cors());
+const app = express();
+
 app.use(express.json());
+app.use(cors());
 
-mongoose.connect("mongodb://127.0.0.1:27017/mernDB")
-.then(()=>{
-  console.log("Mongodb connected");
-}).catch((err)=>{
-    console.log(err);
+mongoose
+  .connect("mongodb://127.0.0.1:27017/mernDB")
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.log(err));
+
+const TaskSchema = new mongoose.Schema({
+  task: String,
 });
 
-const ProductSchema= new mongoose.Schema({
-    name: String,
-    price:Number,
-});
+const Task = mongoose.model("Task", TaskSchema);
 
-const Product= mongoose.model("Product",ProductSchema);
+// Add Task
+app.post("/add", async (req, res) => {
+  try {
+    const newTask = await Task.create({
+      task: req.body.task,
+    });
 
-app.post("/products", async(req,res)=>{
-    const product= await Product.create(req.body);
-    res.json(product);
-});
-
-app.get("/products", async(req,res)=>{
-    const products= await Product.find(req.body);
-    res.json(products);
-});
-
-app.put("/products/:id", async(req,res)=>{
-  try{
-     const updateProduct= await Product.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        {new :true}
-     );  
-     
-     res.json(updateProduct);
-  }catch(err){
-     console.log(err);
+    res.json(newTask);
+  } catch (error) {
+    res.status(500).json(error);
   }
 });
 
-app.delete("/products/:id",async(req,res)=>{
-     try{
-        await Product.findByIdAndDelete(req.params.id);
+// Get All Tasks
+app.get("/tasks", async (req, res) => {
+  try {
+    const tasks = await Task.find();
 
-        res.json({
-            message: "product Deleted"
-        })
-     }catch(err){
-        console.log(err);
-     }
-})
-
-
-
-
-
-app.listen(5000,()=>{
-    console.log("server is running on port 5000");
+    res.json(tasks);
+  } catch (error) {
+    res.status(500).json(error);
+  }
 });
 
+// Delete Task
+app.delete("/delete/:id", async (req, res) => {
+  try {
+    await Task.findByIdAndDelete(req.params.id);
 
+    res.json({
+      message: "Task Deleted",
+    });
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
 
+app.listen(5000, () => {
+  console.log("Server running on port 5000");
+});
