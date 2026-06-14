@@ -55,6 +55,20 @@ app.delete("/delete/:id", async (req, res) => {
   }
 });
 
+app.put("/update/:id", async (req, res) => {
+  try {
+    const updatedTask = await Task.findByIdAndUpdate(
+      req.params.id,
+      { task: req.body.task },
+      { new: true }
+    );
+
+    res.json(updatedTask);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 app.listen(5000, () => {
   console.log("Server running on port 5000");
 });

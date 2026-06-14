@@ -5,6 +5,9 @@ function App() {
   const [task, setTask] = useState("");
   const [tasks, setTasks] = useState([]);
 
+  const [editId, setEditId] = useState(null);
+  const [editTask, setEditTask] = useState("");
+
   const fetchTasks = async () => {
     try {
       const res = await axios.get("http://localhost:5000/tasks");
@@ -42,10 +45,24 @@ function App() {
     }
   };
 
+  const handleUpdate = async () => {
+    try {
+      await axios.put(`http://localhost:5000/update/${editId}`, {
+        task: editTask,
+      });
+
+      setEditId(null);
+      setEditTask("");
+      fetchTasks();
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <div
       style={{
-        width: "600px",
+        width: "700px",
         margin: "40px auto",
       }}
     >
@@ -70,14 +87,7 @@ function App() {
           }}
         />
 
-        <button
-          onClick={handleAdd}
-          style={{
-            padding: "12px 20px",
-            fontSize: "16px",
-            cursor: "pointer",
-          }}
-        >
+        <button onClick={handleAdd}>
           Add Task
         </button>
       </div>
@@ -93,24 +103,68 @@ function App() {
             borderRadius: "8px",
             padding: "15px",
             marginBottom: "12px",
-            fontSize: "18px",
           }}
         >
-          <span>{item.task}</span>
+          {editId === item._id ? (
+            <>
+              <input
+                value={editTask}
+                onChange={(e) => setEditTask(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: "8px",
+                  marginRight: "10px",
+                }}
+              />
 
-          <button
-            onClick={() => handleDelete(item._id)}
-            style={{
-              backgroundColor: "red",
-              color: "white",
-              border: "none",
-              padding: "10px 18px",
-              borderRadius: "5px",
-              cursor: "pointer",
-            }}
-          >
-            Delete
-          </button>
+              <button
+                onClick={handleUpdate}
+                style={{
+                  backgroundColor: "green",
+                  color: "white",
+                  border: "none",
+                  padding: "10px",
+                  marginRight: "10px",
+                }}
+              >
+                Save
+              </button>
+            </>
+          ) : (
+            <>
+              <span>{item.task}</span>
+
+              <div>
+                <button
+                  onClick={() => {
+                    setEditId(item._id);
+                    setEditTask(item.task);
+                  }}
+                  style={{
+                    backgroundColor: "blue",
+                    color: "white",
+                    border: "none",
+                    padding: "10px",
+                    marginRight: "10px",
+                  }}
+                >
+                  Update
+                </button>
+
+                <button
+                  onClick={() => handleDelete(item._id)}
+                  style={{
+                    backgroundColor: "red",
+                    color: "white",
+                    border: "none",
+                    padding: "10px",
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
         </div>
       ))}
     </div>
