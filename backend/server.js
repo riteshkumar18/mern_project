@@ -2,6 +2,8 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+const authRoutes = require("./routes/authRoutes");
+
 const app = express();
 
 app.use(express.json());
@@ -12,13 +14,29 @@ mongoose
   .then(() => console.log("MongoDB Connected"))
   .catch((err) => console.log(err));
 
+
+// =====================
+// TODO MODEL
+// =====================
+
 const TaskSchema = new mongoose.Schema({
   task: String,
 });
 
 const Task = mongoose.model("Task", TaskSchema);
 
-// Add Task
+
+// =====================
+// AUTH ROUTES
+// =====================
+
+app.use("/auth", authRoutes);
+
+
+// =====================
+// TODO ROUTES
+// =====================
+
 app.post("/add", async (req, res) => {
   try {
     const newTask = await Task.create({
@@ -31,18 +49,15 @@ app.post("/add", async (req, res) => {
   }
 });
 
-// Get All Tasks
 app.get("/tasks", async (req, res) => {
   try {
     const tasks = await Task.find();
-
     res.json(tasks);
   } catch (error) {
     res.status(500).json(error);
   }
 });
 
-// Delete Task
 app.delete("/delete/:id", async (req, res) => {
   try {
     await Task.findByIdAndDelete(req.params.id);
@@ -59,8 +74,12 @@ app.put("/update/:id", async (req, res) => {
   try {
     const updatedTask = await Task.findByIdAndUpdate(
       req.params.id,
-      { task: req.body.task },
-      { new: true }
+      {
+        task: req.body.task,
+      },
+      {
+        new: true,
+      }
     );
 
     res.json(updatedTask);
