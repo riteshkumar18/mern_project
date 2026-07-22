@@ -33,15 +33,14 @@ password:hashedPassword,
 
 });
 
-const token=generateToken(user._id);
+const token = generateToken(user);
 
 res.json({
-
-_id:user._id,
-fullName:user.fullName,
-email:user.email,
-token,
-
+  _id: user._id,
+  fullName: user.fullName,
+  email: user.email,
+  role: user.role,
+  token,
 });
 
 }
@@ -82,15 +81,14 @@ message:"Wrong Password",
 
 }
 
-const token=generateToken(user._id);
+const token = generateToken(user);
 
 res.json({
-
-_id:user._id,
-fullName:user.fullName,
-email:user.email,
-token,
-
+  _id: user._id,
+  fullName: user.fullName,
+  email: user.email,
+  role: user.role,
+  token,
 });
 
 }

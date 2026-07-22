@@ -6,10 +6,19 @@ import "../styles/Todo.css";
 function Todo() {
   const navigate = useNavigate();
 
-  const [task, setTask] = useState("");
+  const [search, setSearch] = useState("");
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
+
   const [tasks, setTasks] = useState([]);
+
   const [editId, setEditId] = useState(null);
-  const [editTask, setEditTask] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editContent, setEditContent] = useState("");
 
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -24,24 +33,48 @@ function Todo() {
     fetchTasks();
   }, []);
 
+  useEffect(() => {
+    fetchTasks();
+  }, [search, page]);
+
   const fetchTasks = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/tasks");
-      setTasks(res.data);
+      const res = await axios.get(
+        `http://localhost:5000/tasks?search=${search}&page=${page}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      setTasks(res.data.tasks);
+      setTotalPages(res.data.totalPages);
     } catch (err) {
       console.log(err);
     }
   };
 
   const handleAdd = async () => {
-    if (!task.trim()) return;
+    if (!title.trim() || !content.trim()) return;
 
     try {
-      await axios.post("http://localhost:5000/add", {
-        task,
-      });
+      await axios.post(
+        "http://localhost:5000/add",
+        {
+          title,
+          content,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
-      setTask("");
+      setTitle("");
+      setContent("");
+
       fetchTasks();
     } catch (err) {
       console.log(err);
@@ -50,7 +83,15 @@ function Todo() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/delete/${id}`);
+      await axios.delete(
+        `http://localhost:5000/delete/${id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
       fetchTasks();
     } catch (err) {
       console.log(err);
@@ -58,15 +99,26 @@ function Todo() {
   };
 
   const handleUpdate = async () => {
-    if (!editTask.trim()) return;
+    if (!editTitle.trim() || !editContent.trim()) return;
 
     try {
-      await axios.put(`http://localhost:5000/update/${editId}`, {
-        task: editTask,
-      });
+      await axios.put(
+        `http://localhost:5000/update/${editId}`,
+        {
+          title: editTitle,
+          content: editContent,
+        },
+                {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
 
       setEditId(null);
-      setEditTask("");
+      setEditTitle("");
+      setEditContent("");
+
       fetchTasks();
     } catch (err) {
       console.log(err);
@@ -85,7 +137,7 @@ function Todo() {
 
         <div className="todo-header">
           <div>
-            <h1>📝 MERN Todo App</h1>
+            <h1>📝 MERN Notes App</h1>
             <p>Welcome, {user?.fullName}</p>
           </div>
 
@@ -97,19 +149,42 @@ function Todo() {
           </button>
         </div>
 
+        {/* Search Section */}
+
+        <div className="search-section">
+          <input
+            type="text"
+            placeholder="🔍 Search Notes..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+          />
+        </div>
+
+        {/* Add Note */}
+
         <div className="add-section">
           <input
             type="text"
-            placeholder="Enter a new task..."
-            value={task}
-            onChange={(e) => setTask(e.target.value)}
+            placeholder="Enter Note Title..."
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+
+          <textarea
+            className="note-textarea"
+            placeholder="Write your note..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
           />
 
           <button
             className="add-btn"
             onClick={handleAdd}
           >
-            Add Task
+            Add Note
           </button>
         </div>
 
@@ -120,7 +195,7 @@ function Todo() {
               color: "#666",
             }}
           >
-            No tasks available.
+            No Notes Available.
           </p>
         ) : (
           tasks.map((item) => (
@@ -132,8 +207,16 @@ function Todo() {
                 <>
                   <input
                     className="edit-input"
-                    value={editTask}
-                    onChange={(e) => setEditTask(e.target.value)}
+                    placeholder="Title"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                  />
+
+                  <textarea
+                    className="edit-input note-textarea"
+                    placeholder="Content"
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
                   />
 
                   <button
@@ -146,16 +229,17 @@ function Todo() {
               ) : (
                 <>
                   <div className="task-text">
-                    📌 {item.task}
+                    <h3>{item.title}</h3>
+                    <p>{item.content}</p>
                   </div>
 
                   <div className="action-buttons">
-
                     <button
                       className="update-btn"
                       onClick={() => {
                         setEditId(item._id);
-                        setEditTask(item.task);
+                        setEditTitle(item.title);
+                        setEditContent(item.content);
                       }}
                     >
                       Update
@@ -167,13 +251,34 @@ function Todo() {
                     >
                       Delete
                     </button>
-
                   </div>
                 </>
               )}
             </div>
           ))
         )}
+                <div className="pagination">
+          <button
+            onClick={() => setPage(page - 1)}
+            disabled={page === 1}
+            className="page-btn"
+          >
+            ⬅ Previous
+          </button>
+
+          <span className="page-number">
+            Page {page} of {totalPages}
+          </span>
+
+          <button
+            onClick={() => setPage(page + 1)}
+            disabled={page === totalPages}
+            className="page-btn"
+          >
+            Next ➡
+          </button>
+        </div>
+
       </div>
     </div>
   );
